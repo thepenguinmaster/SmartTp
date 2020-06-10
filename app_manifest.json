@@ -1,0 +1,30 @@
+{
+  "SchemaVersion": 1,
+  "Name": "AzureIoT",
+  "ComponentId": "819255ff-8640-41fd-aea7-f85d34c491d5",
+  "EntryPoint": "/bin/app",
+  "CmdArgs": [
+    "0ne001155C9"
+  ], 
+  "Capabilities": {
+    "I2cMaster": [ "$AVNET_AESMS_ISU0_I2C" ,"$AVNET_AESMS_ISU1_I2C", "$AVNET_AESMS_ISU2_I2C"],
+    "AllowedConnections": [
+      "global.azure-devices-provisioning.net", 
+      "iotc-10dfbf89-f26b-4ad3-872f-00299ff73e05.azure-devices.net", 
+      "iotc-1a4dc635-8bd3-40e8-9f01-289e75326d02.azure-devices.net", 
+      "iotc-e5836402-2faf-4da3-9441-a10c18ea51e6.azure-devices.net", 
+      "iotc-f52c02c3-4b59-4030-b386-32e93fac13ed.azure-devices.net", 
+      "iotc-c79cf6a9-eda9-4169-8b83-0378a39fa115.azure-devices.net", 
+      "iotc-85fce218-9935-4a7e-8eb1-b764537f6088.azure-devices.net", 
+      "iotc-730a4890-4bef-47b9-9ed6-b7191833d380.azure-devices.net", 
+      "iotc-9364826d-a98a-47ea-b1f5-96b769364ee9.azure-devices.net", 
+      "iotc-74e3d74f-7215-403c-b64d-3b5153bbabb9.azure-devices.net", 
+      "iotc-fcaf1d93-d68c-45e5-ad72-47e21db0506d.azure-devices.net"
+  ], 
+  "WifiConfig": true,
+    "Gpio": [ "$AVNET_AESMS_PIN12_GPIO9", "$AVNET_AESMS_PIN14_GPIO12" ],
+
+    "DeviceAuthentication": "5764d973-dc52-4302-8a43-5ad7d0252197"
+  },
+    "ApplicationType": "Default"
+  }
