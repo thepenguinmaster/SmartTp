@@ -18,7 +18,7 @@ C:/Users/rlisiecki/.platformio/packages/framework-azure/arduino/arduino)
 target_compile_definitions(${PROJECT_NAME} PUBLIC AZURE_IOT_HUB_CONFIGURED)
 target_link_libraries(${PROJECT_NAME} m azureiot applibs pthread gcc_s c)
 
-azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "../../Hardware/avnet_aesms_mt3620" TARGET_DEFINITION "avnet_aesms_mt3620.json")
+azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "Hardware/avnet_aesms_mt3620" TARGET_DEFINITION "avnet_aesms_mt3620.json")
 
 find_program(POWERSHELL powershell.exe)
 

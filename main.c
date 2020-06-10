@@ -144,6 +144,13 @@ static int telemetryCount = 0;
 static GPIO_Value_Type sendMessageButtonState = GPIO_Value_High;
 static bool statusLedOn = false;
 
+static enum RollDirection previousDirection;
+static float rotationHistory[4];
+static float delta = 0;
+static float lastDegrees = 0;
+static int fullRotationCount = 0;
+static bool syncRequired = true;
+
 /// <summary>
 ///     Signal handler for termination requests. This handler must be async-signal-safe.
 /// </summary>
@@ -191,7 +198,7 @@ int main(int argc, char *argv[])
 
         // check if rotation is greater or less than last check
         // did it complete a full rotation?
-
+        UpdateSensorData();
         EventLoop_Run_Result result = EventLoop_Run(eventLoop, -1, true);
         // Continue if interrupted by signal, e.g. due to breakpoint being set.
         if (result == EventLoop_Run_Failed && errno != EINTR)
@@ -686,12 +693,7 @@ enum RollDirection
     Backward = 1
 } rollDirection;
 
-enum RollDirection previousDirection;
-float rotationHistory[4];
-float delta = 0;
-float lastDegrees = 0;
-int fullRotationCount = 0;
-void SendRotationData(void)
+void UpdateSensorData()
 {
     float rotation = convertRawAngleToDegrees(getRawAngle());
     if (rotation != lastDegrees)
@@ -722,7 +724,15 @@ void SendRotationData(void)
             // one full rotation?
             fullRotationCount++;
         }
+        syncRequired = true;
+    }
+    lastDegrees = rotation;
+}
 
+void SendRotationData(void)
+{
+    if (syncRequired)
+    {
         char telemetryBuffer[TELEMETRY_BUFFER_SIZE];
         int len = snprintf(telemetryBuffer, TELEMETRY_BUFFER_SIZE, "{\"Degrees\":\"%3.2f\",\"Rotation\":\"%i\"}", rotationHistory[0], fullRotationCount);
 
@@ -733,7 +743,7 @@ void SendRotationData(void)
         }
         SendTelemetry(telemetryBuffer);
     }
-    lastDegrees = rotation;
+    syncRequired = false;
 }
 
 /// <summary>

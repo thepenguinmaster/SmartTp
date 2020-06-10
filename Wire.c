@@ -26,16 +26,12 @@
 #include "avnet_aesms_mt3620.h"
 #include <Arduino.h>
 
-//#define min(a, b) ((a) < (b) ? (a) : (b))
-//#define max(a, b) ((a) > (b) ? (a) : (b))
 
-//#include "Arduino.h"
 #include "Wire.h"
 #include <applibs/i2c.h>
 
-//#include <variant.h>
 #define DEBUG_I2C
-//Serial.printf
+
 
 static const size_t DEFAULT_BUFFER_LIMIT = 32;
 
@@ -73,17 +69,8 @@ void end()
 {
   if (fd >= 0)
   {
-    //close(fd);
     fd = -1;
   }
-  //  if (rxBuffer != nullptr) {
-  ////    delete[] rxBuffer;
-  //    rxBufferLimit = 0;
-  //  }
-  //  if (txBuffer != nullptr) {
-  //    delete[] txBuffer;
-  //   txBufferLimit = 0;
-  // }
 }
 
 void setClock(uint32_t frequency)
@@ -221,26 +208,24 @@ void changeBufferLimits(size_t rxLimit, size_t txLimit)
 
   if (rxBufferLimit != rxLimit)
   {
-     if (rxBuffer != NULL) {
-     //delete[] rxBuffer;
-     free(rxBuffer);
-       }
+    if (rxBuffer != NULL)
+    {
+      free(rxBuffer);
+    }
     rxBufferLimit = rxLimit;
-  // rxBuffer = new uint8_t[rxBufferLimit];
-   rxBuffer= malloc(rxBufferLimit);
+    rxBuffer = malloc(rxBufferLimit);
     rxBufferIndex = 0;
     rxBufferLength = 0;
   }
 
   if (txBufferLimit != txLimit)
   {
-    if (txBuffer != NULL) {
-      //delete[] txBuffer;
-        free(txBuffer);
-     }
+    if (txBuffer != NULL)
+    {
+      free(txBuffer);
+    }
     txBufferLimit = txLimit;
-      //txBuffer = new uint8_t[txBufferLimit];
-     txBuffer = malloc(txBufferLimit);
+    txBuffer = malloc(txBufferLimit);
     txBufferLength = 0;
   }
 }
