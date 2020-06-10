@@ -5,7 +5,6 @@
 // services. Using the Azure IoT SDK C APIs, it shows how to:
 // 1. Use Device Provisioning Service (DPS) to connect to Azure IoT Hub/Central with
 // certificate-based authentication
-// 2. Use Device Twin to upload simulated temperature measurements, upload button press events and
 // receive a desired LED state from Azure IoT Hub/Central
 // 3. Use Direct Methods to receive a "Trigger Alarm" command from Azure IoT Hub/Central
 
@@ -66,23 +65,13 @@
 typedef enum
 {
     ExitCode_Success = 0,
-
     ExitCode_TermHandler_SigTerm = 1,
-
     ExitCode_Main_EventLoopFail = 2,
-
-    ExitCode_ButtonTimer_Consume = 3,
-
+    _Consume = 3,
     ExitCode_AzureTimer_Consume = 4,
-
     ExitCode_Init_EventLoop = 5,
-    ExitCode_Init_MessageButton = 6,
-    ExitCode_Init_OrientationButton = 7,
     ExitCode_Init_TwinStatusLed = 8,
-    ExitCode_Init_ButtonPollTimer = 9,
     ExitCode_Init_AzureTimer = 10,
-
-    ExitCode_IsButtonPressed_GetValue = 11
 } ExitCode;
 
 static volatile sig_atomic_t exitCode = ExitCode_Success;
@@ -109,9 +98,8 @@ static const char *GetAzureSphereProvisioningResultString(
     AZURE_SPHERE_PROV_RETURN_VALUE provisioningResult);
 static void SendTelemetry(const char *jsonMessage);
 static void SetupAzureClient(void);
+static void UpdateSensorData(void);
 static void SendRotationData(void);
-static void ButtonPollTimerEventHandler(EventLoopTimer *timer);
-static bool IsButtonPressed(int fd, GPIO_Value_Type *oldState);
 static void AzureTimerEventHandler(EventLoopTimer *timer);
 
 // Initialization/Cleanup
@@ -119,16 +107,12 @@ static ExitCode InitPeripheralsAndHandlers(void);
 static void CloseFdAndPrintError(int fd, const char *fdName);
 static void ClosePeripheralsAndHandlers(void);
 
-// File descriptors - initialized to invalid value
-// Button
-static int sendMessageButtonGpioFd = -1;
 
 // LED
 static int deviceTwinStatusLedGpioFd = -1;
 
 // Timer / polling
 static EventLoop *eventLoop = NULL;
-static EventLoopTimer *buttonPollTimer = NULL;
 static EventLoopTimer *azureTimer = NULL;
 
 // Azure IoT poll periods
@@ -140,9 +124,13 @@ static const int AzureIoTMaxReconnectPeriodSeconds = 10 * 60; // back off limit
 static int azureIoTPollPeriodSeconds = -1;
 static int telemetryCount = 0;
 
-// State variables
-static GPIO_Value_Type sendMessageButtonState = GPIO_Value_High;
 static bool statusLedOn = false;
+
+enum RollDirection
+{
+    Forward = 0,
+    Backward = 1
+} rollDirection;
 
 static enum RollDirection previousDirection;
 static float rotationHistory[4];
@@ -166,8 +154,7 @@ static void TerminationHandler(int signalNumber)
 
 int main(int argc, char *argv[])
 {
-    Log_Debug("Azure IoT Application starting.\n");
-    //AMS_5600();
+    Log_Debug("SmartTp Starting.\n");
     AS5600_open(AVNET_AESMS_ISU2_I2C);
 
     // 3 SCL GPIO37_MOSI2_RTS2_SCL2
@@ -212,23 +199,6 @@ int main(int argc, char *argv[])
     Log_Debug("Application exiting.\n");
 
     return exitCode;
-}
-
-/// <summary>
-/// Button timer event:  Check the status of the button
-/// </summary>
-static void ButtonPollTimerEventHandler(EventLoopTimer *timer)
-{
-    if (ConsumeEventLoopTimerEvent(timer) != 0)
-    {
-        exitCode = ExitCode_ButtonTimer_Consume;
-        return;
-    }
-
-    if (IsButtonPressed(sendMessageButtonGpioFd, &sendMessageButtonState))
-    {
-        SendTelemetry("{\"ButtonPress\" : \"True\"}");
-    }
 }
 
 /// <summary>
@@ -288,15 +258,6 @@ static ExitCode InitPeripheralsAndHandlers(void)
         return ExitCode_Init_EventLoop;
     }
 
-    // Open SAMPLE_BUTTON_1 GPIO as input
-    Log_Debug("Opening AVNET_AESMS_PIN14_GPIO12 as input.\n");
-    sendMessageButtonGpioFd = GPIO_OpenAsInput(AVNET_AESMS_PIN14_GPIO12);
-    if (sendMessageButtonGpioFd == -1)
-    {
-        Log_Debug("ERROR: Could not open AVNET_AESMS_PIN14_GPIO12: %s (%d).\n", strerror(errno), errno);
-        return ExitCode_Init_MessageButton;
-    }
-
     // AVNET_AESMS_PIN12_GPIO9 is used to show Device Twin settings state
     Log_Debug("Opening AVNET_AESMS_PIN12_GPIO9 as output.\n");
     deviceTwinStatusLedGpioFd =
@@ -306,21 +267,9 @@ static ExitCode InitPeripheralsAndHandlers(void)
         Log_Debug("ERROR: Could not open AVNET_AESMS_PIN12_GPIO9: %s (%d).\n", strerror(errno), errno);
         return ExitCode_Init_TwinStatusLed;
     }
-
-    // Set up a timer to poll for button events.
-    static const struct timespec buttonPressCheckPeriod = {.tv_sec = 0, .tv_nsec = 1000 * 1000};
-    buttonPollTimer = CreateEventLoopPeriodicTimer(eventLoop, &ButtonPollTimerEventHandler,
-                                                   &buttonPressCheckPeriod);
-    if (buttonPollTimer == NULL)
-    {
-        return ExitCode_Init_ButtonPollTimer;
-    }
-
     azureIoTPollPeriodSeconds = AzureIoTDefaultPollPeriodSeconds;
-    //struct timespec azureTelemetryPeriod = {.tv_sec = azureIoTPollPeriodSeconds, .tv_nsec = 0};
-    struct timespec azureTelemetryPeriod = {.tv_sec = 0, .tv_nsec = 500000000};
-    azureTimer =
-        CreateEventLoopPeriodicTimer(eventLoop, &AzureTimerEventHandler, &azureTelemetryPeriod);
+    struct timespec azureTelemetryPeriod = {.tv_sec = 1, .tv_nsec = 0};
+    azureTimer = CreateEventLoopPeriodicTimer(eventLoop, &AzureTimerEventHandler, &azureTelemetryPeriod);
     if (azureTimer == NULL)
     {
         return ExitCode_Init_AzureTimer;
@@ -351,7 +300,6 @@ static void CloseFdAndPrintError(int fd, const char *fdName)
 /// </summary>
 static void ClosePeripheralsAndHandlers(void)
 {
-    DisposeEventLoopTimer(buttonPollTimer);
     DisposeEventLoopTimer(azureTimer);
     EventLoop_Close(eventLoop);
 
@@ -363,7 +311,6 @@ static void ClosePeripheralsAndHandlers(void)
         GPIO_SetValue(deviceTwinStatusLedGpioFd, GPIO_Value_High);
     }
 
-    CloseFdAndPrintError(sendMessageButtonGpioFd, "SendMessageButton");
     CloseFdAndPrintError(deviceTwinStatusLedGpioFd, "StatusLed");
 }
 
@@ -687,13 +634,9 @@ static void ReportedStateCallback(int result, void *context)
 
 #define TELEMETRY_BUFFER_SIZE 100
 
-enum RollDirection
-{
-    Forward = 0,
-    Backward = 1
-} rollDirection;
 
-void UpdateSensorData()
+
+void UpdateSensorData(void)
 {
     float rotation = convertRawAngleToDegrees(getRawAngle());
     if (rotation != lastDegrees)
@@ -719,7 +662,7 @@ void UpdateSensorData()
 
         previousDirection = rollDirection;
 
-        if ((delta > 200) && (rotationHistory[0] < rotationHistory[1]) && (rotationHistory[1] > rotationHistory[2]) && (rotationHistory[2] > rotationHistory[3]))
+        if ((delta > 200) && rotationHistory[0]!=0  && rotationHistory[2] !=0  && rotationHistory[3]!=0 )
         {
             // one full rotation?
             fullRotationCount++;
@@ -744,30 +687,4 @@ void SendRotationData(void)
         SendTelemetry(telemetryBuffer);
     }
     syncRequired = false;
-}
-
-/// <summary>
-///     Check whether a given button has just been pressed.
-/// </summary>
-/// <param name="fd">The button file descriptor</param>
-/// <param name="oldState">Old state of the button (pressed or released)</param>
-/// <returns>true if pressed, false otherwise</returns>
-static bool IsButtonPressed(int fd, GPIO_Value_Type *oldState)
-{
-    bool isButtonPressed = false;
-    GPIO_Value_Type newState;
-    int result = GPIO_GetValue(fd, &newState);
-    if (result != 0)
-    {
-        Log_Debug("ERROR: Could not read button GPIO: %s (%d).\n", strerror(errno), errno);
-        exitCode = ExitCode_IsButtonPressed_GetValue;
-    }
-    else
-    {
-        // Button is pressed if it is low and different than last known state.
-        isButtonPressed = (newState != *oldState) && (newState == GPIO_Value_Low);
-        *oldState = newState;
-    }
-
-    return isButtonPressed;
 }
