@@ -35,7 +35,7 @@
 
 static const size_t DEFAULT_BUFFER_LIMIT = 32;
 
-TwoWire(int port_id)
+void TwoWire(int port_id)
 {
   fd = -1;
   id = port_id;
@@ -48,24 +48,24 @@ TwoWire(int port_id)
   txBufferLimit = 0;
 }
 
-TwoWireCtor()
+void wire_create(void)
 {
-  end();
+  wire_end();
 }
 
-void begin2()
+void wire_begin2()
 {
   if (fd >= 0)
   {
     DEBUG_I2C("[I2C] already open\n");
     return;
   }
-  changeBufferLimits(DEFAULT_BUFFER_LIMIT, DEFAULT_BUFFER_LIMIT);
+  wire_changeBufferLimits(DEFAULT_BUFFER_LIMIT, DEFAULT_BUFFER_LIMIT);
   fd = I2CMaster_Open(id);
   DEBUG_I2C("[I2C] I2CMaster_Open = %d\n", fd);
 }
 
-void end()
+void wire_end()
 {
   if (fd >= 0)
   {
@@ -73,7 +73,7 @@ void end()
   }
 }
 
-void setClock(uint32_t frequency)
+void wire_setClock(uint32_t frequency)
 {
   int rc = I2CMaster_SetBusSpeed(fd, I2C_BUS_SPEED_STANDARD);
   if (rc != 0)
@@ -82,15 +82,15 @@ void setClock(uint32_t frequency)
   }
 }
 
-uint8_t requestFrom2(uint8_t address, uint8_t quantity, uint8_t sendStop)
+uint8_t wire_requestFrom2(uint8_t address, uint8_t quantity, uint8_t sendStop)
 {
   if (txBufferLength > 0 && address != txAddress)
   {
-    endTransmission(true);
+    wire_endTransmission(true);
   }
 
   quantity = min(quantity, rxBufferLimit);
-  size_t res = -1;
+  ssize_t res = -1;
   if (txBufferLength > 0)
   {
     res = I2CMaster_WriteThenRead(fd, address,
@@ -109,13 +109,13 @@ uint8_t requestFrom2(uint8_t address, uint8_t quantity, uint8_t sendStop)
   return rxBufferLength;
 }
 
-void beginTransmission(uint8_t address)
+void wire_beginTransmission(uint8_t address)
 {
   txAddress = address;
   txBufferLength = 0;
 }
 
-uint8_t endTransmission(uint8_t sendStop)
+uint8_t wire_endTransmission(uint8_t sendStop)
 {
   if (!sendStop)
   {
@@ -140,9 +140,9 @@ uint8_t endTransmission(uint8_t sendStop)
   return 0;
 }
 
-uint8_t endTransmission2(void)
+uint8_t wire_endTransmission2(void)
 {
-  return endTransmission(true);
+  return wire_endTransmission(true);
 }
 
 size_t wire_write(uint8_t data)
@@ -181,7 +181,7 @@ int wire_read(void)
   return value;
 }
 
-int peek(void)
+int wire_peek(void)
 {
   int value = -1;
   if (rxBufferIndex < rxBufferLength)
@@ -191,17 +191,17 @@ int peek(void)
   return value;
 }
 
-void begin(uint8_t address)
+void wire_begin(uint8_t address)
 {
-  begin2();
+  wire_begin2();
 }
 
-uint8_t requestFrom(uint8_t address, uint8_t quantity)
+uint8_t wire_requestFrom(uint8_t address, uint8_t quantity)
 {
-  return requestFrom2(address, quantity, (uint8_t) true);
+  return wire_requestFrom2(address, quantity, (uint8_t) true);
 }
 
-void changeBufferLimits(size_t rxLimit, size_t txLimit)
+void wire_changeBufferLimits(size_t rxLimit, size_t txLimit)
 {
   rxLimit = max(1, rxLimit);
   txLimit = max(1, txLimit);

@@ -2,8 +2,7 @@
 #define TwoWire_h
 
 #include <inttypes.h>
-#include <Arduino.h>
-
+#include "stddef.h"
 extern uint8_t TWBR;
 
 #define BUFFER_LENGTH 32
@@ -19,30 +18,30 @@ uint8_t *txBuffer;
 size_t txBufferLength;
 size_t txBufferLimit;
 
-TwoWire(int port_id);
-TwoWireCtor();
+void TwoWire(int port_id);
+void wire_create(void);
 
-void end();
-void begin2();
-void begin(uint8_t);
-void setClock(uint32_t);
-void beginTransmission(uint8_t);
-uint8_t endTransmission2(void);
-uint8_t endTransmission(uint8_t);
-uint8_t requestFrom(uint8_t, uint8_t);
-uint8_t requestFrom2(uint8_t, uint8_t, uint8_t);
+void wire_end(void);
+void wire_begin2(void);
+void wire_begin(uint8_t);
+void wire_setClock(uint32_t);
+void wire_beginTransmission(uint8_t);
+uint8_t wire_endTransmission2(void);
+uint8_t wire_endTransmission(uint8_t);
+uint8_t wire_requestFrom(uint8_t, uint8_t);
+uint8_t wire_requestFrom2(uint8_t, uint8_t, uint8_t);
 size_t wire_write(uint8_t);
 size_t wire_write2(const uint8_t *data, size_t quantity);
 int wire_available(void);
 int wire_read(void);
-int peek(void);
-void flush(void) ;
+int wire_peek(void);
+void wire_flush(void) ;
 
 /** \brief Change buffer size limits.
      *  \param rxLimit read buffer size.
      *  \param txLimit write buffer size.
      */
-void changeBufferLimits(size_t rxLimit, size_t txLimit);
+void wire_changeBufferLimits(size_t rxLimit, size_t txLimit);
 
 //extern TwoWire Wire;
 //extern TwoWire Wire1;

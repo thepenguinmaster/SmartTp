@@ -8,12 +8,14 @@ project(AzureIoT C)
 azsphere_configure_tools(TOOLS_REVISION "20.04")
 azsphere_configure_api(TARGET_API_SET "5")
 
-add_executable(${PROJECT_NAME} main.c eventloop_timer_utilities.c parson.c AS5600.c wire.c)
+add_executable(${PROJECT_NAME} main.c eventloop_timer_utilities.c parson.c AS5600/AS5600.c wire/wire.c vl53l0x/vl53l0x.c)
 target_include_directories(${PROJECT_NAME} PUBLIC ${AZURE_SPHERE_API_SET_DIR}/usr/include/azureiot 
 ${PROJECT_NAME}/include
+${PROJECT_NAME}/AS5600
+${PROJECT_NAME}/vl53l0x
+${PROJECT_NAME}/wire
 C:/Users/rlisiecki/.platformio/packages/framework-azure/arduino/core
 C:/Users/rlisiecki/.platformio/packages/framework-azure/arduino/variants/avnet_aesms_mt3620
-C:/Users/rlisiecki/.platformio/packages/framework-azure/arduino/libraries
 C:/Users/rlisiecki/.platformio/packages/framework-azure/arduino/arduino) 
 target_compile_definitions(${PROJECT_NAME} PUBLIC AZURE_IOT_HUB_CONFIGURED)
 target_link_libraries(${PROJECT_NAME} m azureiot applibs pthread gcc_s c)

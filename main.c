@@ -54,8 +54,9 @@
 #include <iothub.h>
 #include <azure_sphere_provisioning.h>
 
-#include "AS5600.h"
-//AMS_5600 ams5600;
+#include "AS5600/AS5600.h"
+#include "vl53l0x/vl53l0x.h"
+
 
 /// <summary>
 /// Exit codes for this application. These are used for the

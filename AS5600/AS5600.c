@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "AS5600.h"
 #include <applibs/i2c.h>
-#include "Wire.h"
+#include "../wire/Wire.h"
 static int i2cFd = -1;
 int _ic2Id;
 int ang, lang = 0;
@@ -13,7 +13,7 @@ void AS5600_open(int ic2Id)
   /* set i2c address */
   _ic2Id = ic2Id;
 TwoWire(ic2Id);
-begin2();
+wire_begin2();
   //_ams5600_Address = 0x36;
   /* load register values*/
   /* c++ class forbids pre loading of variables */
@@ -198,9 +198,9 @@ uint8_t getBurnCount()
   return readOneByte(_zmco);
 }
 
-uint8_t burnAngle()
+int8_t burnAngle()
 {
-  uint8_t retVal = 1;
+  int8_t retVal = 1;
   _zPosition = getStartPosition();
   _mPosition = getEndPosition();
   _maxAngle = getMaxAngle();
@@ -223,9 +223,9 @@ uint8_t burnAngle()
   return retVal;
 }
 
-uint8_t burnMaxAngleAndConfig()
+int8_t burnMaxAngleAndConfig()
 {
-  uint8_t retVal = 1;
+  int8_t retVal = 1;
   _maxAngle = getMaxAngle();
 
   if (getBurnCount() == 0)
@@ -250,23 +250,23 @@ uint8_t readOneByte(uint8_t in_adr)
 }
 
 
-word readTwoBytes(int in_adr_hi, int in_adr_lo)
+word readTwoBytes(uint8_t in_adr_hi, uint8_t in_adr_lo)
 {
-  word retVal = -1;
+  word retVal = 0;
  
   /* Read Low Byte */
-  beginTransmission(_ams5600_Address);
+  wire_beginTransmission(_ams5600_Address);
   wire_write(in_adr_lo);
-  endTransmission(true);
-  requestFrom(_ams5600_Address, 1);
+  wire_endTransmission(true);
+  wire_requestFrom(_ams5600_Address, 1);
   while(wire_available() == 0);
   int low = wire_read();
  
   /* Read High Byte */  
-  beginTransmission(_ams5600_Address);
+  wire_beginTransmission(_ams5600_Address);
   wire_write(in_adr_hi);
-  endTransmission(true);
-  requestFrom(_ams5600_Address, 1);
+  wire_endTransmission(true);
+  wire_requestFrom(_ams5600_Address, 1);
   
   while(wire_available() == 0);
   
@@ -279,12 +279,12 @@ word readTwoBytes(int in_adr_hi, int in_adr_lo)
 }
 
 
-void writeOneByte(int adr_in, int dat_in)
+void writeOneByte(uint8_t adr_in, uint8_t dat_in)
 {
-  beginTransmission(_ams5600_Address);
+  wire_beginTransmission(_ams5600_Address);
   wire_write(adr_in); 
   wire_write(dat_in);
-  endTransmission(true);
+  wire_endTransmission(true);
 }
 
 float convertRawAngleToDegrees(word newAngle)

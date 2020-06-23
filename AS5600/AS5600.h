@@ -1,23 +1,12 @@
 #ifndef AMS_5600_h
 #define AMS_5600_h
 
-//#include <Arduino.h>
-//#include <Wire.h>
-
-// AMS_5600
-//{
-// public:
-
-
 typedef unsigned char   uint8_t;
 typedef unsigned short  uint16_t;
 
 
 typedef uint8_t byte;
 typedef uint16_t word;
-
-
-
 
 void AS5600_open(int ic2Id);
 uint8_t getAddress(void);
@@ -40,8 +29,8 @@ uint8_t getAgc(void);
 word getMagnitude(void);
 
 uint8_t getBurnCount(void);
-uint8_t burnAngle(void);
-uint8_t burnMaxAngleAndConfig(void);
+int8_t burnAngle(void);
+int8_t burnMaxAngleAndConfig(void);
 void setOutPut(uint8_t mode);
 
 //private:
@@ -74,10 +63,7 @@ uint8_t _mag_lo;
 uint8_t _burn;
 
 uint8_t readOneByte(uint8_t in_adr);
-word readTwoBytes(int in_adr_hi, int in_adr_lo);
-//word readTwoBytes2(uint8_t in_adr_hi, uint8_t in_adr_lo);
-//void writeOneByte(uint8_t adr_in, uint8_t dat_in);
-void writeOneByte(int adr_in, int dat_in);
+word readTwoBytes(uint8_t in_adr_hi, uint8_t in_adr_lo);
+void writeOneByte(uint8_t adr_in, uint8_t dat_in);
 float convertRawAngleToDegrees(word newAngle);
-//};
 #endif
